@@ -36,21 +36,18 @@ jobs:
           yarn install
           sudo service mysql start
           systemctl status mysql.service
-      - uses: actions/cache@v2
-        with:
-          path: '**/node_modules'
-          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
       - name: DB prepare
         run: |
           echo '!!!!!!!!!!!!!'
-          echo $DATABASE_HOST
-          echo $DATABASE_PORT
-          mysql --host 127.0.0.1 --port 3306 -u root -p'password'
-          GRANT ALL PRIVILEGES ON * . * TO 'root'@'%' WITH GRANT OPTION;
+          echo $MYSQL_PWD
+          bundle exec rake db:create
+        # mysql --host 127.0.0.1 --port 3306 -u root -e "statement" ALTER USER 'root'@'localhost' IDENTIFIED BY 'password'
+        # GRANT ALL PRIVILEGES ON * . * TO 'root'@'%' WITH GRANT OPTION;
         env:
           RAILS_ENV: test
           DATABASE_PORT: 3306
           DATABASE_HOST: 127.0.0.1
+          MYSQL_PWD: password
       - name: Run tests
         run: |
           bundle exec rake db:create
