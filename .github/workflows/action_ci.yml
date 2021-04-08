@@ -2,7 +2,10 @@ name: CI2
 
 on:
   push:
-    branches: [master]
+    # Sequence of patterns matched against refs/heads
+    branches:
+      # Push events to branches matching refs/heads/releases/10
+      - 'feature/**'
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -12,9 +15,13 @@ jobs:
         ports:
           - "3306:3306"
         env:
-          # MYSQL_DATABASE: cashare_cc_test
-          # MYSQL_ROOT_PASSWORD: password
-        # options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_DATABASE: github_action_test
+          # options: >-
+          #   --health-cmd="mysqladmin ping"
+          #   --health-interval=10s
+          #   --health-timeout=5s
+          #   --health-retries=3
     env:
       DB_USER: root
       # DB_PASS: password
@@ -34,20 +41,19 @@ jobs:
         with:
           path: '**/node_modules'
           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
-
-      - name: DB prepare1
-        env:
-          RAILS_ENV: test
-          DB_PORT: 3306
+      - name: Install dependencies
+        run: |
+          bundle install --retry 3
+          yarn install
+      - name: DB prepare
         run: |
           sudo service mysql start
-      - name: DB prepare2
-        run: |
           bundle exec rake db:create
           bundle exec rake db:migrate
-      - name: Run tests
         env:
-          RAILS_ENV: test
           DB_PORT: 3306
+          RAILS_ENV: test
+      - name: Run tests
         run: |
           rubocop
+
