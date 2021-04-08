@@ -17,7 +17,7 @@ jobs:
         env:
           MYSQL_HOST: 127.0.0.1
           MYSQL_DATABASE: github_action_test
-          MYSQL_USER: root
+          MYSQL_USER: user
           # MYSQL_ALLOW_EMPTY_PASSWORD: yes
           MYSQL_PASSWORD: password
           MYSQL_ROOT_PASSWORD: password
@@ -45,15 +45,15 @@ jobs:
           echo '!!!!!!!!!!!!!'
           echo $DATABASE_HOST
           echo $DATABASE_PORT
-          sudo mysql -h 127.0.0.1 --port 3306 -u root
-          GRANT ALL PRIVILEGES ON * . * TO 'root'@'%' WITH GRANT OPTION;
-        # bundle exec rake db:create
+          sudo mysql --host 127.0.0.1 --port 3306 -u user -p password
+          GRANT ALL PRIVILEGES ON * . * TO 'user'@'%' WITH GRANT OPTION;
         env:
           RAILS_ENV: test
           DATABASE_PORT: 3306
           DATABASE_HOST: 127.0.0.1
       - name: Run tests
         run: |
+          bundle exec rake db:create
           bundle exec rake db:migrate
           bundle exec rubocop
 
