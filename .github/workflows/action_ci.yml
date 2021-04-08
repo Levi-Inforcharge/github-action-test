@@ -2,52 +2,38 @@ name: CI2
 
 on:
   push:
-    branches: [master]
+    # Sequence of patterns matched against refs/heads
+    branches:
+      # Push events to branches matching refs/heads/releases/10
+      - 'feature/**'
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:8.0
-        ports:
-          - "3306:3306"
-        env:
-          # MYSQL_DATABASE: cashare_cc_test
-          # MYSQL_ROOT_PASSWORD: password
-        # options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-    env:
-      DB_USER: root
-      # DB_PASS: password
-      DB_HOST: 127.0.0.1
-      # DB_DB: cashare_cc_test
-      DB_PORT: 3306
-
     steps:
       - uses: actions/checkout@v2
-      - name: Setup Ruby 2.7.2
+      - uses: mirromutth/mysql-action@v1.1
+        with:
+          mysql version: '8.0' # Optional, default value is "latest". The version of the MySQL
+          mysql database: 'github_action_test' # Optional, default value is "test". The specified database which will be create
+          mysql root password: password # Required if "mysql user" is empty, default is empty. The root superuser password
+      - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: 2.7.2
           bundler: default
           bundler-cache: true
-      - uses: actions/cache@v2
-        with:
-          path: '**/node_modules'
-          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
-
-      - name: DB prepare1
-        env:
-          RAILS_ENV: test
-          DB_PORT: 3306
+      - name: Install dependencies
         run: |
-          sudo service mysql start
-      - name: DB prepare2
+          bundle install --retry 3
+          yarn install
+      - name: DB prepare
         run: |
           bundle exec rake db:create
           bundle exec rake db:migrate
-      - name: Run tests
         env:
           RAILS_ENV: test
-          DB_PORT: 3306
+      - name: Run tests
         run: |
-          rubocop
+          bundle exec rubocop
+        env:
+          RAILS_ENV: test
